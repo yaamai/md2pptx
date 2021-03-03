@@ -7,5 +7,6 @@
   - [ ] borrow from pandoc logic
 - [ ] styling from marp
   - [ ] style template (slide-master)
-  - [ ] precious styling with metadata (commonmark experimental metadata??)
+  - [ ] precious styling with metadata (commonmark experimental attrs.)
+    - https://pandoc.org/MANUAL.html#extension-header_attributes
 - [ ] live preview (pptx->img?)

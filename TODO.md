@@ -19,7 +19,8 @@
   EOF
   PYODIDE_PACKAGES="micropip,lxml,python-pptx,marko" make
   ```
-- [ ] markdown parse
+- [x] markdown parse
+  - [x] marko
 - [ ] markdown to pptx logics
   - [ ] borrow from pandoc logic
 - [ ] styling from marp
@@ -27,3 +28,4 @@
   - [ ] precious styling with metadata (commonmark experimental attrs.)
     - https://pandoc.org/MANUAL.html#extension-header_attributes
 - [ ] live preview (pptx->img?)
+  - [ ] libreoffice?

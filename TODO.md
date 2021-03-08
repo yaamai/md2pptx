@@ -21,6 +21,42 @@
   ```
 - [x] markdown parse
   - [x] marko
+    ```
+    import io
+    from marko import Markdown
+    from marko import Parser
+    from marko.html_renderer import HTMLRenderer
+    from marko.renderer import Renderer
+    from pptx import Presentation
+
+    """
+    - heading(level=1) starts new slide
+    - horizonal line starts new slide
+    - heading(level>1) as
+    """
+
+    class PptxRenderer(Renderer):
+
+        def render_document(self, element):
+            self.pres = Presentation()
+            self.render_children(element)
+
+            buf = io.BytesIO()
+            self.pres.save(buf)
+            return buf
+
+        def render_heading(self, element):
+            print(element)
+
+        def render_children(self, element):
+            print(element)
+            [self.render(child) for child in element.children]
+
+
+    # md = Markdown(parser=Parser, renderer=HTMLRenderer)
+    md = Markdown(parser=Parser, renderer=PptxRenderer)
+    print(md("# aaa"))
+    ```
 - [ ] markdown to pptx logics
   - [ ] borrow from pandoc logic
 - [ ] styling from marp

@@ -63,7 +63,7 @@ for shape in pres.slide_master.shapes:
     elif shape.shape_type == MSO_SHAPE_TYPE.PLACEHOLDER:
         print(shape.text)
         g.append(draw.Rectangle(shape.left/FACTOR, shape.top/FACTOR, shape.width/FACTOR, shape.height/FACTOR, fill='none', stroke='#1248ff', stroke_width=1000/FACTOR))
-        g.append(draw.Text(shape.text, 200, 0, 0, text_anchor='middle', transform='scale(1,-1) translate({},{})'.format(shape.left/FACTOR, shape.top/FACTOR)))
+        g.append(draw.Text(shape.text, 400, 0, -400, text_anchor='start', transform='scale(1,-1) translate({},{})'.format(shape.left/FACTOR, shape.top/FACTOR)))
     else:
         g.append(draw.Rectangle(shape.left/FACTOR, shape.top/FACTOR, shape.width/FACTOR, shape.height/FACTOR, fill='#1248ff'))
     # d.append(draw.Rectangle(shape.left/FACTOR, pres.slide_height/FACTOR-shape.top/FACTOR, shape.width/FACTOR, shape.height/FACTOR, fill='#1248ff'))

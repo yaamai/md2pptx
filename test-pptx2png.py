@@ -56,6 +56,11 @@ for shape in pres.slide_master.shapes:
             line_color = shape.line.fill.fore_color.rgb
             line_width = shape.line.width/FACTOR
             g.append(draw.Circle(shape.left/FACTOR+r/2, shape.top/FACTOR+r/2, r/2, fill='#{}'.format(c), stroke='#{}'.format(line_color), stroke_width=line_width))
+    elif shape.shape_type == MSO_SHAPE_TYPE.GROUP:
+        print(shape, shape.name, "SHAPE len = {}".format(len(shape.shapes)))
+        for shape in shape.shapes:
+            print(shape.shape_type, shape.left, shape.top, shape.width, shape.height)
+        g.append(draw.Rectangle(shape.left/FACTOR, shape.top/FACTOR, shape.width/FACTOR, shape.height/FACTOR, fill='#1248ff'))
     elif shape.shape_type == MSO_SHAPE_TYPE.LINE:
         line_color = shape.line.fill.fore_color.rgb
         line_width = shape.line.width/FACTOR
@@ -64,6 +69,8 @@ for shape in pres.slide_master.shapes:
         print(shape.text)
         g.append(draw.Rectangle(shape.left/FACTOR, shape.top/FACTOR, shape.width/FACTOR, shape.height/FACTOR, fill='none', stroke='#1248ff', stroke_width=1000/FACTOR))
         g.append(draw.Text(shape.text, 400, 0, -400, text_anchor='start', transform='scale(1,-1) translate({},{})'.format(shape.left/FACTOR, shape.top/FACTOR)))
+    elif shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
+        g.append(draw.Image(shape.left/FACTOR, shape.top/FACTOR, shape.width/FACTOR, shape.height/FACTOR, data=shape.image.blob))
     else:
         g.append(draw.Rectangle(shape.left/FACTOR, shape.top/FACTOR, shape.width/FACTOR, shape.height/FACTOR, fill='#1248ff'))
     # d.append(draw.Rectangle(shape.left/FACTOR, pres.slide_height/FACTOR-shape.top/FACTOR, shape.width/FACTOR, shape.height/FACTOR, fill='#1248ff'))

@@ -4,7 +4,7 @@ from pptx.enum.shapes import MSO_SHAPE
 import base64
 import svgwrite
 
-FACTOR = 720
+FACTOR = 360
 
 """
 
@@ -64,45 +64,57 @@ libreoffice-svg:
 my-impl:
 
 """
-def _convert_shape(dwg, shape):
+def _convert_shape(dwg, shape, parent=None):
     print(shape.shape_type, shape, shape.left, shape.top, shape.width, shape.height)
     if shape.shape_type == MSO_SHAPE_TYPE.AUTO_SHAPE:
         pass
     elif shape.shape_type == MSO_SHAPE_TYPE.GROUP:
         print(shape, shape.name, "SHAPE len = {}".format(len(shape.shapes)))
-        for shape in shape.shapes:
-            _convert_shape(dwg, shape)
+        r = dwg.rect(insert=(shape.left/FACTOR, shape.top/FACTOR),
+                        size=(shape.width/FACTOR, shape.height/FACTOR), fill='gray', opacity=0.1, stroke='gray', stroke_width=10)
+        dwg.add(r)
+        group = dwg.g()
+        group.translate(shape.left/FACTOR, shape.top/FACTOR)
+        for s in shape.shapes:
+            group.add(_convert_shape(dwg, s))
+        return group
     elif shape.shape_type == MSO_SHAPE_TYPE.LINE:
         pass
     elif shape.shape_type == MSO_SHAPE_TYPE.FREEFORM:
+        # import pdb; pdb.set_trace()
+        group = dwg.g()
         for p in shape.element.spPr.custGeom.pathLst:
-            path = dwg.path(fill="none", stroke="blue", stroke_width=10)
+            path = dwg.path(fill="none", stroke="blue", stroke_width=200)
             path.translate(shape.left/FACTOR, shape.top/FACTOR)
+            path.scale((shape.width/360)/p.w, (shape.height/360)/p.h)
             for command in p:
                 if command.tag == '{http://schemas.openxmlformats.org/drawingml/2006/main}moveTo':
-                    path.push('m', command.pt.x, command.pt.y)
+                    path.push('M', command.pt.x, command.pt.y)
                 elif command.tag == '{http://schemas.openxmlformats.org/drawingml/2006/main}lnTo':
-                    import pdb; pdb.set_trace()
-                    path.push('l', command.pt.x/100, command.pt.y/100)
+                    # import pdb; pdb.set_trace()
+                    path.push('L', command.pt.x, command.pt.y)
                 elif command.tag == '{http://schemas.openxmlformats.org/drawingml/2006/main}cubicBezTo':
-                    path.push('c', command[0].x, command[0].y, command[1].x, command[1].y, command[2].x, command[2].y)
+                    path.push('C', command[0].x, command[0].y, command[1].x, command[1].y, command[2].x, command[2].y)
+                elif command.tag == '{http://schemas.openxmlformats.org/drawingml/2006/main}close':
+                    path.push('Z')
                 else:
+                    # pass
                     import pdb; pdb.set_trace()
-            dwg.add(path)
+            group.add(path)
+        return group
+
     elif shape.shape_type == MSO_SHAPE_TYPE.PLACEHOLDER:
-        rect = dwg.rect(insert=(shape.left/FACTOR, shape.top/FACTOR),
+        return dwg.rect(insert=(shape.left/FACTOR, shape.top/FACTOR),
                         size=(shape.width/FACTOR, shape.height/FACTOR), fill='gray', opacity=0.1, stroke='gray', stroke_width=10)
-        dwg.add(rect)
+
     elif shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
         b64_data = base64.b64encode(shape.image.blob).decode()
         data_uri = 'data:{};base64,{}'.format('image/png', b64_data)
-        image = dwg.image(data_uri, insert=(shape.left/FACTOR, shape.top/FACTOR),
-                          size=(shape.width/FACTOR, shape.height/FACTOR))
-        dwg.add(image)
-    else:
-        rect = dwg.rect(insert=(shape.left/FACTOR, shape.top/FACTOR),
-                        size=(shape.width/FACTOR, shape.height/FACTOR), fill='blue', stroke='red', stroke_width=10)
-        dwg.add(rect)
+        return dwg.image(data_uri, insert=(shape.left/FACTOR, shape.top/FACTOR),
+                         size=(shape.width/FACTOR, shape.height/FACTOR))
+
+    return dwg.rect(insert=(shape.left/FACTOR, shape.top/FACTOR),
+                    size=(shape.width/FACTOR, shape.height/FACTOR), fill='blue', stroke='red', stroke_width=10)
 
 
 def main():
@@ -111,7 +123,7 @@ def main():
     dwg.viewbox(0, 0, pres.slide_width/FACTOR, pres.slide_height/FACTOR)
 
     for shape in pres.slide_master.shapes:
-        _convert_shape(dwg, shape)
+        dwg.add(_convert_shape(dwg, shape))
 
     dwg.save()
 

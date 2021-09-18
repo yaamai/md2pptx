@@ -64,17 +64,23 @@ libreoffice-svg:
 my-impl:
 
 """
-def _convert_shape(dwg, shape, parent=None):
+def _convert_shape(dwg, shape):
     print(shape.shape_type, shape, shape.left, shape.top, shape.width, shape.height)
     if shape.shape_type == MSO_SHAPE_TYPE.AUTO_SHAPE:
-        pass
+        if shape.auto_shape_type == MSO_SHAPE.OVAL:
+            r = shape.width/FACTOR
+            # import pdb; pdb.set_trace()
+            fill_color = 'rgb({}, {}, {})'.format(*shape.fill.fore_color.rgb)
+            line_color = 'rgb({}, {}, {})'.format(*shape.line.fill.fore_color.rgb)
+            line_width = shape.line.width/FACTOR
+            return dwg.circle((shape.left/FACTOR+r/2, shape.top/FACTOR+r/2), r/2, fill=fill_color, stroke=line_color, stroke_width=line_width)
     elif shape.shape_type == MSO_SHAPE_TYPE.GROUP:
-        print(shape, shape.name, "SHAPE len = {}".format(len(shape.shapes)))
+        # print(shape, shape.name, shape.element.xml, "SHAPE len = {}".format(len(shape.shapes)))
         r = dwg.rect(insert=(shape.left/FACTOR, shape.top/FACTOR),
                         size=(shape.width/FACTOR, shape.height/FACTOR), fill='gray', opacity=0.1, stroke='gray', stroke_width=10)
         dwg.add(r)
         group = dwg.g()
-        group.translate(shape.left/FACTOR, shape.top/FACTOR)
+        # group.translate(shape.left/FACTOR, shape.top/FACTOR)
         for s in shape.shapes:
             group.add(_convert_shape(dwg, s))
         return group
@@ -84,9 +90,12 @@ def _convert_shape(dwg, shape, parent=None):
         # import pdb; pdb.set_trace()
         group = dwg.g()
         for p in shape.element.spPr.custGeom.pathLst:
-            path = dwg.path(fill="none", stroke="blue", stroke_width=200)
+            # import pdb; pdb.set_trace()
+            color = 'rgb({}, {}, {})'.format(*shape.line.color.rgb)
+            path = dwg.path(fill="none", stroke=color, stroke_width=shape.line.width)
             path.translate(shape.left/FACTOR, shape.top/FACTOR)
             path.scale((shape.width/360)/p.w, (shape.height/360)/p.h)
+            # print("Scale: ", shape.left/FACTOR, shape.top/FACTOR, (shape.width/360)/p.w, (shape.height/360)/p.h, shape.width/FACTOR, shape.height/FACTOR, p.w, p.h)
             for command in p:
                 if command.tag == '{http://schemas.openxmlformats.org/drawingml/2006/main}moveTo':
                     path.push('M', command.pt.x, command.pt.y)

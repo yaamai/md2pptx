@@ -91,8 +91,13 @@ def _convert_shape(dwg, shape):
         group = dwg.g()
         for p in shape.element.spPr.custGeom.pathLst:
             # import pdb; pdb.set_trace()
+            print(shape.line.width)
+            line_width = shape.line.width/FACTOR
+            if shape.line.width == 0:
+                # SVG's default stroke width == 1
+                line_width = 30
             color = 'rgb({}, {}, {})'.format(*shape.line.color.rgb)
-            path = dwg.path(fill="none", stroke=color, stroke_width=shape.line.width)
+            path = dwg.path(fill="none", stroke=color, stroke_width=line_width)
             path.translate(shape.left/FACTOR, shape.top/FACTOR)
             path.scale((shape.width/360)/p.w, (shape.height/360)/p.h)
             # print("Scale: ", shape.left/FACTOR, shape.top/FACTOR, (shape.width/360)/p.w, (shape.height/360)/p.h, shape.width/FACTOR, shape.height/FACTOR, p.w, p.h)

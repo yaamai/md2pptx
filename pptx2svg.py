@@ -1,6 +1,7 @@
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 from pptx.enum.shapes import MSO_SHAPE
+from pptx.enum.dml import MSO_FILL
 import base64
 import svgwrite
 
@@ -47,37 +48,34 @@ def _convert_shape_line(dwg, shape, parent):
 def _convert_shape_freeform(dwg, shape, parent):
     ff_group = dwg.g()
     for p in shape.element.spPr.custGeom.pathLst:
+        # wrap path to group element due to translate coords incorrectly if using shape's translate func
         g = dwg.g()
 
         f_w = parent.width/parent.element.xfrm.chExt.cx
         f_h = parent.height/parent.element.xfrm.chExt.cy
         g.translate(shape.left*f_w-parent.element.xfrm.chOff.x*f_w, shape.top*f_h-parent.element.xfrm.chOff.y*f_h)
 
-        # import pdb; pdb.set_trace()
-        # print(shape.line.width)
+        fill = "none"
+        if shape.fill.type == MSO_FILL.SOLID:
+            fill = 'rgb({}, {}, {})'.format(*shape.fill.fore_color.rgb)
+        line_color = ""
         line_width = shape.line.width
-        if shape.line.width == 0:
-            # SVG's default stroke width == 1
-            line_width = 30
-        color = 'red'
-        # color = 'rgb({}, {}, {})'.format(*shape.line.color.rgb)
-        path = dwg.path(fill="none", stroke=color, stroke_width=line_width)
-        # path.translate(shape.left, shape.top)
+        if shape.line.width != 0:
+            line_color = 'rgb({}, {}, {})'.format(*shape.line.color.rgb)
+
+        path = dwg.path(fill=fill, stroke=line_color, stroke_width=line_width)
         path.scale((shape.width*f_w)/p.w, (shape.height*f_h)/p.h)
-        # path.scale(shape._parent.parent.element.xfrm.chExt.cx/p.w, shape._parent.parent.element.xfrm.chExt.cy/p.h)
-        # print("Scale: ", shape.left/FACTOR, shape.top/FACTOR, (shape.width/360)/p.w, (shape.height/360)/p.h, shape.width/FACTOR, shape.height/FACTOR, p.w, p.h)
+
         for command in p:
             if command.tag == '{http://schemas.openxmlformats.org/drawingml/2006/main}moveTo':
                 path.push('M', command.pt.x, command.pt.y)
             elif command.tag == '{http://schemas.openxmlformats.org/drawingml/2006/main}lnTo':
-                # import pdb; pdb.set_trace()
                 path.push('L', command.pt.x, command.pt.y)
             elif command.tag == '{http://schemas.openxmlformats.org/drawingml/2006/main}cubicBezTo':
                 path.push('C', command[0].x, command[0].y, command[1].x, command[1].y, command[2].x, command[2].y)
             elif command.tag == '{http://schemas.openxmlformats.org/drawingml/2006/main}close':
                 path.push('Z')
             else:
-                # pass
                 import pdb; pdb.set_trace()
         g.add(path)
         ff_group.add(g)

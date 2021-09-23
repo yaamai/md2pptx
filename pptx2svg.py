@@ -14,16 +14,27 @@ def _calc_slide_size(pres, width=None, height=720):
     raise Exception()
 
 
+def _get_svg_color_info(shape):
+    fill = "none"
+    if shape.fill.type == MSO_FILL.SOLID:
+        fill = 'rgb({}, {}, {})'.format(*shape.fill.fore_color.rgb)
+    stroke_color = ""
+    stroke_width = shape.line.width
+    if shape.line.width != 0:
+        stroke_color = 'rgb({}, {}, {})'.format(*shape.line.color.rgb)
+
+    return fill, stroke_color, stroke_width
+
 def _convert_shape_auto_shape(dwg, shape, parent):
     if shape.auto_shape_type == MSO_SHAPE.OVAL:
-        pass
-        # r = shape.width/FACTOR
-        # # import pdb; pdb.set_trace()
-        # # fill_color = 'rgb({}, {}, {})'.format(*shape.fill.fore_color.rgb)
-        # fill_color = ''
-        # line_color = 'rgb({}, {}, {})'.format(*shape.line.fill.fore_color.rgb)
-        # line_width = shape.line.width/FACTOR
-        # return dwg.circle((shape.left/FACTOR+r/2, shape.top/FACTOR+r/2), r/2, fill=fill_color, stroke=line_color, stroke_width=line_width)
+        r = shape.width
+        fill_color, stroke_color, stroke_width = _get_svg_color_info(shape)
+        return dwg.circle((shape.left+r/2, shape.top+r/2), r/2, fill=fill_color, stroke=stroke_color, stroke_width=stroke_width)
+
+    if shape.auto_shape_type == MSO_SHAPE.RECTANGLE:
+        fill, stroke_color, stroke_width = _get_svg_color_info(shape)
+        return dwg.rect(insert=(shape.left, shape.top),
+                        size=(shape.width, shape.height), fill=fill, stroke=stroke_color, stroke_width=stroke_width)
 
 
 def _convert_shape_group(dwg, shape, parent):
@@ -36,6 +47,8 @@ def _convert_shape_group(dwg, shape, parent):
     group.translate(shape.left, shape.top)
     for s in shape.shapes:
         elem = _convert_shape(dwg, s, shape)
+        if not elem:
+            print("skipped shape: ", s)
         if elem:
             group.add(elem)
     return group
@@ -55,15 +68,8 @@ def _convert_shape_freeform(dwg, shape, parent):
         f_h = parent.height/parent.element.xfrm.chExt.cy
         g.translate(shape.left*f_w-parent.element.xfrm.chOff.x*f_w, shape.top*f_h-parent.element.xfrm.chOff.y*f_h)
 
-        fill = "none"
-        if shape.fill.type == MSO_FILL.SOLID:
-            fill = 'rgb({}, {}, {})'.format(*shape.fill.fore_color.rgb)
-        line_color = ""
-        line_width = shape.line.width
-        if shape.line.width != 0:
-            line_color = 'rgb({}, {}, {})'.format(*shape.line.color.rgb)
-
-        path = dwg.path(fill=fill, stroke=line_color, stroke_width=line_width)
+        fill, stroke_color, stroke_width = _get_svg_color_info(shape)
+        path = dwg.path(fill=fill, stroke=stroke_color, stroke_width=stroke_width)
         path.scale((shape.width*f_w)/p.w, (shape.height*f_h)/p.h)
 
         for command in p:
@@ -117,6 +123,8 @@ def main():
 
     for shape in pres.slide_master.shapes:
         elem = _convert_shape(dwg, shape, None)
+        if not elem:
+            print("skipped shape: ", shape)
         if elem:
             dwg.add(elem)
 
